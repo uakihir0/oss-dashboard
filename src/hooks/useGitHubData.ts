@@ -3,11 +3,7 @@ import { REPOS } from '../config'
 import { clearCache, fetchRepoData, getRateLimit, isRateLimited } from '../lib/github-api'
 import type { RateLimitInfo, RepoData } from '../types'
 
-const REQUEST_INTERVAL_MS = 0
-
-function delay(ms: number): Promise<void> {
-  return new Promise(resolve => setTimeout(resolve, ms))
-}
+const CONCURRENCY = 3
 
 export function useGitHubData() {
   const [repos, setRepos] = useState<RepoData[]>(
@@ -33,54 +29,45 @@ export function useGitHubData() {
       error: null,
     })))
 
-    for (let i = 0; i < REPOS.length; i++) {
-      if (abortRef.current) break
-      const config = REPOS[i]
+    let nextIndex = 0
 
-      if (isRateLimited()) {
-        setRepos(prev => prev.map((r, idx) =>
-          idx >= i
-            ? { ...r, loading: false, error: `Rate limited (resets ${getRateLimit().resetAt.toLocaleTimeString()})` }
-            : r
-        ))
-        break
-      }
+    const worker = async () => {
+      while (nextIndex < REPOS.length) {
+        if (abortRef.current || isRateLimited()) break
+        const i = nextIndex++
+        const config = REPOS[i]
 
-      try {
-        const { workflows, release, snapshot } = await fetchRepoData(
-          config.owner,
-          config.name,
-          config.mainBranch,
-        )
+        try {
+          const { workflows, release, snapshot } = await fetchRepoData(
+            config.owner,
+            config.name,
+            config.mainBranch,
+          )
 
-        setRepos(prev => prev.map((r, idx) =>
-          idx === i
-            ? { config, workflows, versions: { release, snapshot }, loading: false, error: null }
-            : r
-        ))
-      } catch (e) {
-        const msg = e instanceof Error ? e.message : 'Unknown error'
-        setRepos(prev => prev.map((r, idx) =>
-          idx === i
-            ? { config, workflows: [], versions: { release: null, snapshot: null }, loading: false, error: msg }
-            : r
-        ))
-
-        if (isRateLimited()) {
           setRepos(prev => prev.map((r, idx) =>
-            idx > i && r.loading
-              ? { ...r, loading: false, error: msg }
+            idx === i
+              ? { config, workflows, versions: { release, snapshot }, loading: false, error: null }
               : r
           ))
-          break
+        } catch (e) {
+          const msg = e instanceof Error ? e.message : 'Unknown error'
+          setRepos(prev => prev.map((r, idx) =>
+            idx === i
+              ? { config, workflows: [], versions: { release: null, snapshot: null }, loading: false, error: msg }
+              : r
+          ))
         }
-      }
 
-      setRateLimit(getRateLimit())
-
-      if (i < REPOS.length - 1 && !isRateLimited()) {
-        await delay(REQUEST_INTERVAL_MS)
+        setRateLimit(getRateLimit())
       }
+    }
+
+    const workers = Array.from({ length: CONCURRENCY }, () => worker())
+    await Promise.all(workers)
+
+    if (isRateLimited()) {
+      const msg = `Rate limited (resets ${getRateLimit().resetAt.toLocaleTimeString()})`
+      setRepos(prev => prev.map(r => r.loading ? { ...r, loading: false, error: msg } : r))
     }
 
     setRateLimit(getRateLimit())
