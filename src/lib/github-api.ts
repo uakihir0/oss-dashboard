@@ -115,6 +115,18 @@ export function clearCache() {
   }
 }
 
+export function clearRepoCache(owner: string, repo: string) {
+  const prefix = `gh:`
+  const patterns = [
+    `${prefix}runs:${owner}/${repo}`,
+    `${prefix}release:${owner}/${repo}`,
+    `${prefix}snapshot:${owner}/${repo}`,
+  ]
+  for (const key of patterns) {
+    localStorage.removeItem(key)
+  }
+}
+
 export async function fetchRepoData(
   owner: string,
   repo: string,

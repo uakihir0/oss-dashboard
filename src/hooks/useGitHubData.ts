@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
 import { REPOS } from '../config'
-import { clearCache, fetchRepoData, getRateLimit, isRateLimited } from '../lib/github-api'
+import { clearCache, clearRepoCache, fetchRepoData, getRateLimit, isRateLimited } from '../lib/github-api'
 import type { RateLimitInfo, RepoData } from '../types'
 
 const CONCURRENCY = 3
@@ -74,15 +74,48 @@ export function useGitHubData() {
     setLastUpdated(new Date())
   }, [])
 
-  const refresh = useCallback(() => {
+  const refreshAll = useCallback(() => {
     abortRef.current = true
     clearCache()
     setTimeout(() => fetchAll(), 100)
   }, [fetchAll])
 
+  const refreshRepo = useCallback(async (repoName: string) => {
+    const i = REPOS.findIndex(r => r.name === repoName)
+    if (i === -1) return
+    const config = REPOS[i]
+
+    clearRepoCache(config.owner, config.name)
+    setRepos(prev => prev.map((r, idx) =>
+      idx === i ? { ...r, loading: true, error: null } : r
+    ))
+
+    try {
+      const { workflows, release, snapshot } = await fetchRepoData(
+        config.owner,
+        config.name,
+        config.mainBranch,
+      )
+      setRepos(prev => prev.map((r, idx) =>
+        idx === i
+          ? { config, workflows, versions: { release, snapshot }, loading: false, error: null }
+          : r
+      ))
+    } catch (e) {
+      const msg = e instanceof Error ? e.message : 'Unknown error'
+      setRepos(prev => prev.map((r, idx) =>
+        idx === i
+          ? { config, workflows: [], versions: { release: null, snapshot: null }, loading: false, error: msg }
+          : r
+      ))
+    }
+
+    setRateLimit(getRateLimit())
+  }, [])
+
   useEffect(() => {
     fetchAll()
   }, [fetchAll])
 
-  return { repos, rateLimit, lastUpdated, refresh }
+  return { repos, rateLimit, lastUpdated, refresh: refreshAll, refreshRepo }
 }

@@ -4,6 +4,7 @@ import { VersionInfo } from './VersionInfo'
 
 interface Props {
   repo: RepoData
+  onRefresh: (repoName: string) => void
 }
 
 function getOverallStatus(repo: RepoData): 'success' | 'failure' | 'unknown' {
@@ -14,7 +15,7 @@ function getOverallStatus(repo: RepoData): 'success' | 'failure' | 'unknown' {
   return allSuccess ? 'success' : 'unknown'
 }
 
-export function RepoCard({ repo }: Props) {
+export function RepoCard({ repo, onRefresh }: Props) {
   const { config, workflows, versions, loading, error } = repo
   const repoUrl = `https://github.com/${config.owner}/${config.name}`
   const overall = getOverallStatus(repo)
@@ -22,12 +23,22 @@ export function RepoCard({ repo }: Props) {
   return (
     <div className="repo-card">
       <div className="repo-header">
-        <a href={repoUrl} target="_blank" rel="noopener noreferrer" className="repo-name">
-          {!loading && !error && (
-            <span className={`overall-status overall-${overall}`}>●</span>
-          )}
-          {config.displayName}
-        </a>
+        <div className="repo-title-row">
+          <a href={repoUrl} target="_blank" rel="noopener noreferrer" className="repo-name">
+            {!loading && !error && (
+              <span className={`overall-status overall-${overall}`}>●</span>
+            )}
+            {config.displayName}
+          </a>
+          <button
+            className="repo-refresh-btn"
+            onClick={() => onRefresh(config.name)}
+            disabled={loading}
+            title="Refresh this repository"
+          >
+            ↻
+          </button>
+        </div>
         <p className="repo-description">{config.description}</p>
       </div>
 

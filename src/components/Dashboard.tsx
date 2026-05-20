@@ -8,10 +8,11 @@ interface Props {
   lastUpdated: Date | null
   hasToken: boolean
   onRefresh: () => void
+  onRefreshRepo: (repoName: string) => void
   onOpenSettings: () => void
 }
 
-export function Dashboard({ repos, rateLimit, lastUpdated, hasToken, onRefresh, onOpenSettings }: Props) {
+export function Dashboard({ repos, rateLimit, lastUpdated, hasToken, onRefresh, onRefreshRepo, onOpenSettings }: Props) {
   return (
     <div className="dashboard">
       <Header
@@ -23,7 +24,7 @@ export function Dashboard({ repos, rateLimit, lastUpdated, hasToken, onRefresh, 
       />
       <div className="repo-grid">
         {repos.map(repo => (
-          <RepoCard key={repo.config.name} repo={repo} />
+          <RepoCard key={repo.config.name} repo={repo} onRefresh={onRefreshRepo} />
         ))}
       </div>
     </div>

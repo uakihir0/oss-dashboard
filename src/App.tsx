@@ -5,7 +5,7 @@ import { useGitHubData } from './hooks/useGitHubData'
 import { getToken, setToken } from './lib/github-api'
 
 function App() {
-  const { repos, rateLimit, lastUpdated, refresh } = useGitHubData()
+  const { repos, rateLimit, lastUpdated, refresh, refreshRepo } = useGitHubData()
   const [showSettings, setShowSettings] = useState(false)
   const [hasToken, setHasToken] = useState(!!getToken())
 
@@ -23,6 +23,7 @@ function App() {
         lastUpdated={lastUpdated}
         hasToken={hasToken}
         onRefresh={refresh}
+        onRefreshRepo={refreshRepo}
         onOpenSettings={() => setShowSettings(true)}
       />
       {showSettings && (
