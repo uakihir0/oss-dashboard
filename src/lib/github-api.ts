@@ -147,12 +147,18 @@ async function fetchWorkflowStatuses(owner: string, repo: string, branch: string
     return cached.data
   }
 
+  const activeWorkflows = await fetchJSON<{ workflows: { id: number }[] }>(
+    `${API_BASE}/repos/${owner}/${repo}/actions/workflows`
+  )
+  const activeIds = new Set(activeWorkflows.workflows.map(w => w.id))
+
   const url = `${API_BASE}/repos/${owner}/${repo}/actions/runs?per_page=100&branch=${branch}&exclude_pull_requests=true`
   const data = await fetchJSON<{ workflow_runs: WorkflowRun[] }>(url)
   const runs = data.workflow_runs
 
   const latestByWorkflow = new Map<number, WorkflowRun>()
   for (const run of runs) {
+    if (!activeIds.has(run.workflow_id)) continue
     if (!latestByWorkflow.has(run.workflow_id)) {
       latestByWorkflow.set(run.workflow_id, run)
     }
