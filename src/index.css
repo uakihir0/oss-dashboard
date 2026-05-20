@@ -330,10 +330,29 @@ a:hover {
   line-height: 1.25;
   letter-spacing: -0.3px;
   color: var(--ink);
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
 }
 
 .repo-name:hover {
   color: var(--primary-hover);
+}
+
+.overall-status {
+  font-size: 10px;
+}
+
+.overall-success {
+  color: var(--success);
+}
+
+.overall-failure {
+  color: var(--failure);
+}
+
+.overall-unknown {
+  color: var(--ink-tertiary);
 }
 
 .repo-description {
@@ -471,6 +490,24 @@ a:hover {
 @keyframes pulse {
   0%, 100% { opacity: 1; }
   50% { opacity: 0.4; }
+}
+
+.expand-btn {
+  background: none;
+  border: none;
+  color: var(--ink-subtle);
+  font-family: var(--font-text);
+  font-size: 12px;
+  cursor: pointer;
+  padding: 4px 6px;
+  margin-top: 2px;
+  border-radius: var(--radius-xs);
+  transition: color 0.15s, background 0.15s;
+}
+
+.expand-btn:hover {
+  color: var(--ink);
+  background: var(--surface-2);
 }
 
 /* States */
