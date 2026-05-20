@@ -1,5 +1,5 @@
 import { CACHE_TTL_MS, EXCLUDED_WORKFLOWS } from '../config'
-import type { RateLimitInfo, VersionInfo, WorkflowRun, WorkflowStatus } from '../types'
+import type { RateLimitInfo, WorkflowRun, WorkflowStatus } from '../types'
 
 const API_BASE = 'https://api.github.com'
 
