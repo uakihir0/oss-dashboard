@@ -119,7 +119,7 @@ async function fetchWithCache<T>(url: string, cacheKey: string): Promise<T> {
 export function clearCache() {
   const keys = Object.keys(localStorage)
   for (const key of keys) {
-    if (key.startsWith('gh:')) {
+    if (key.startsWith('gh:') && key !== TOKEN_KEY) {
       localStorage.removeItem(key)
     }
   }
