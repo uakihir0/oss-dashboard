@@ -24,9 +24,7 @@ export function useGitHubData() {
         try {
           const [workflows, release, snapshot] = await Promise.all([
             fetchWorkflowStatuses(config.owner, config.name, config.mainBranch),
-            config.hasReleases
-              ? fetchLatestRelease(config.owner, config.name)
-              : Promise.resolve(null),
+            fetchLatestRelease(config.owner, config.name),
             fetchSnapshotVersion(config.owner, config.name),
           ])
 

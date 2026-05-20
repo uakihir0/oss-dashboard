@@ -24,7 +24,7 @@ export function RepoCard({ repo }: Props) {
 
       {!loading && !error && (
         <>
-          <VersionInfo versions={versions} hasReleases={config.hasReleases} />
+          <VersionInfo versions={versions} />
           <CIStatus workflows={workflows} />
         </>
       )}

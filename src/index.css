@@ -149,11 +149,17 @@ a:hover {
 /* Repository Grid */
 .repo-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(480px, 1fr));
-  gap: var(--space-lg);
+  grid-template-columns: repeat(3, 1fr);
+  gap: var(--space-md);
 }
 
-@media (max-width: 560px) {
+@media (max-width: 1024px) {
+  .repo-grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+
+@media (max-width: 640px) {
   .repo-grid {
     grid-template-columns: 1fr;
   }
@@ -179,19 +185,21 @@ a:hover {
   background: var(--surface-1);
   border: 1px solid var(--hairline);
   border-radius: var(--radius-lg);
-  padding: var(--space-lg);
+  padding: var(--space-md);
+  display: flex;
+  flex-direction: column;
 }
 
 .repo-header {
-  margin-bottom: var(--space-lg);
+  margin-bottom: var(--space-sm);
 }
 
 .repo-name {
   font-family: var(--font-display);
-  font-size: 22px;
-  font-weight: 500;
+  font-size: 18px;
+  font-weight: 600;
   line-height: 1.25;
-  letter-spacing: -0.4px;
+  letter-spacing: -0.3px;
   color: var(--ink);
 }
 
@@ -200,14 +208,15 @@ a:hover {
 }
 
 .repo-description {
-  margin-top: var(--space-xxs);
-  font-size: 14px;
+  margin-top: 2px;
+  font-size: 12px;
   color: var(--ink-subtle);
+  line-height: 1.4;
 }
 
 /* Version Info */
 .version-info {
-  margin-bottom: var(--space-lg);
+  margin-bottom: var(--space-sm);
 }
 
 .version-info h3 {
@@ -274,11 +283,11 @@ a:hover {
 .workflow-item a {
   display: flex;
   align-items: center;
-  gap: var(--space-xs);
-  padding: var(--space-xxs) var(--space-xs);
+  gap: 6px;
+  padding: 2px 6px;
   border-radius: var(--radius-xs);
   color: var(--ink-muted);
-  font-size: 14px;
+  font-size: 13px;
   transition: background 0.15s, color 0.15s;
 }
 

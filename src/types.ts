@@ -3,7 +3,6 @@ export interface RepoConfig {
   name: string
   displayName: string
   description: string
-  hasReleases: boolean
   mainBranch: string
 }
 
