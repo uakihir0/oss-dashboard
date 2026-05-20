@@ -416,6 +416,13 @@ a:hover {
   color: var(--ink-muted);
   font-size: 13px;
   transition: background 0.15s, color 0.15s;
+  white-space: nowrap;
+  overflow: hidden;
+}
+
+.workflow-name {
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
 .workflow-item a:hover {
