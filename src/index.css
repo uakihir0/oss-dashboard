@@ -315,6 +315,8 @@ a:hover {
   padding: var(--space-md);
   display: flex;
   flex-direction: column;
+  overflow: hidden;
+  min-width: 0;
 }
 
 .repo-header {
@@ -389,6 +391,11 @@ a:hover {
 }
 
 /* CI Status */
+.ci-status {
+  overflow: hidden;
+  min-width: 0;
+}
+
 .ci-status h3 {
   font-family: var(--font-text);
   font-size: 13px;

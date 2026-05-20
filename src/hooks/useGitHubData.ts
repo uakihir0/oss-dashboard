@@ -3,7 +3,7 @@ import { REPOS } from '../config'
 import { clearCache, fetchRepoData, getRateLimit, isRateLimited } from '../lib/github-api'
 import type { RateLimitInfo, RepoData } from '../types'
 
-const REQUEST_INTERVAL_MS = 100
+const REQUEST_INTERVAL_MS = 0
 
 function delay(ms: number): Promise<void> {
   return new Promise(resolve => setTimeout(resolve, ms))
