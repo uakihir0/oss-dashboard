@@ -23,7 +23,6 @@ export function setToken(token: string | null) {
 interface CacheEntry<T> {
   data: T
   timestamp: number
-  etag: string | null
 }
 
 let rateLimitInfo: RateLimitInfo = {
@@ -58,51 +57,45 @@ function updateRateLimit(headers: Headers) {
   }
 }
 
-function getCacheEntry<T>(cacheKey: string): CacheEntry<T> | null {
+function getCache<T>(cacheKey: string): CacheEntry<T> | null {
   const cached = localStorage.getItem(cacheKey)
   if (!cached) return null
   return JSON.parse(cached) as CacheEntry<T>
 }
 
-function setCacheEntry<T>(cacheKey: string, data: T, etag: string | null) {
-  localStorage.setItem(cacheKey, JSON.stringify({
-    data,
-    timestamp: Date.now(),
-    etag,
-  } satisfies CacheEntry<T>))
+function setCache<T>(cacheKey: string, data: T) {
+  try {
+    localStorage.setItem(cacheKey, JSON.stringify({
+      data,
+      timestamp: Date.now(),
+    } satisfies CacheEntry<T>))
+  } catch {
+    // quota exceeded — silently skip caching
+  }
 }
 
-async function fetchWithCache<T>(url: string, cacheKey: string): Promise<T> {
-  const cacheEntry = getCacheEntry<T>(cacheKey)
-
-  if (cacheEntry && Date.now() - cacheEntry.timestamp < CACHE_TTL_MS) {
-    return cacheEntry.data
+function buildHeaders(): Record<string, string> {
+  const headers: Record<string, string> = {}
+  if (authToken) {
+    headers['Authorization'] = `token ${authToken}`
   }
+  return headers
+}
 
+async function fetchJSON<T>(url: string): Promise<T> {
   if (rateLimited) {
-    if (cacheEntry) return cacheEntry.data
     throw new Error(`Rate limited (resets ${rateLimitInfo.resetAt.toLocaleTimeString()})`)
   }
 
-  const headers: Record<string, string> = {}
-  if (authToken) {
-    headers['Authorization'] = `Bearer ${authToken}`
-  }
-  if (cacheEntry?.etag) {
-    headers['If-None-Match'] = cacheEntry.etag
-  }
-
-  const response = await fetch(url, { headers })
+  const response = await fetch(url, { headers: buildHeaders() })
   updateRateLimit(response.headers)
 
-  if (response.status === 304 && cacheEntry) {
-    setCacheEntry(cacheKey, cacheEntry.data, cacheEntry.etag)
-    return cacheEntry.data
+  if (response.status === 401) {
+    throw new Error('Invalid token (HTTP 401)')
   }
 
   if (response.status === 403 || response.status === 429) {
     rateLimited = true
-    if (cacheEntry) return cacheEntry.data
     throw new Error(`Rate limited (resets ${rateLimitInfo.resetAt.toLocaleTimeString()})`)
   }
 
@@ -110,10 +103,7 @@ async function fetchWithCache<T>(url: string, cacheKey: string): Promise<T> {
     throw new Error(`HTTP ${response.status}`)
   }
 
-  const data = await response.json()
-  const etag = response.headers.get('etag')
-  setCacheEntry(cacheKey, data, etag)
-  return data
+  return response.json()
 }
 
 export function clearCache() {
@@ -139,10 +129,14 @@ export async function fetchRepoData(
 }
 
 async function fetchWorkflowStatuses(owner: string, repo: string, _branch: string): Promise<WorkflowStatus[]> {
-  const url = `${API_BASE}/repos/${owner}/${repo}/actions/runs?per_page=100&exclude_pull_requests=true`
   const cacheKey = `gh:runs:${owner}/${repo}`
+  const cached = getCache<WorkflowStatus[]>(cacheKey)
+  if (cached && Date.now() - cached.timestamp < CACHE_TTL_MS) {
+    return cached.data
+  }
 
-  const data = await fetchWithCache<{ workflow_runs: WorkflowRun[] }>(url, cacheKey)
+  const url = `${API_BASE}/repos/${owner}/${repo}/actions/runs?per_page=100&exclude_pull_requests=true`
+  const data = await fetchJSON<{ workflow_runs: WorkflowRun[] }>(url)
   const runs = data.workflow_runs
 
   const latestByWorkflow = new Map<number, WorkflowRun>()
@@ -152,7 +146,7 @@ async function fetchWorkflowStatuses(owner: string, repo: string, _branch: strin
     }
   }
 
-  return Array.from(latestByWorkflow.values())
+  const statuses = Array.from(latestByWorkflow.values())
     .filter(run => !EXCLUDED_WORKFLOWS.some(ex => run.name.toLowerCase().includes(ex)))
     .map(run => ({
       name: run.name,
@@ -160,6 +154,9 @@ async function fetchWorkflowStatuses(owner: string, repo: string, _branch: strin
       url: run.html_url,
       updatedAt: run.created_at,
     }))
+
+  setCache(cacheKey, statuses)
+  return statuses
 }
 
 function mapConclusion(run: WorkflowRun): WorkflowStatus['conclusion'] {
@@ -172,14 +169,21 @@ function mapConclusion(run: WorkflowRun): WorkflowStatus['conclusion'] {
 }
 
 async function fetchLatestRelease(owner: string, repo: string): Promise<string | null> {
-  const url = `${API_BASE}/repos/${owner}/${repo}/releases/latest`
   const cacheKey = `gh:release:${owner}/${repo}`
+  const cached = getCache<string | null>(cacheKey)
+  if (cached && Date.now() - cached.timestamp < CACHE_TTL_MS) {
+    return cached.data
+  }
 
   try {
-    const data = await fetchWithCache<{ tag_name: string }>(url, cacheKey)
+    const data = await fetchJSON<{ tag_name: string }>(
+      `${API_BASE}/repos/${owner}/${repo}/releases/latest`
+    )
+    setCache(cacheKey, data.tag_name)
     return data.tag_name
   } catch (e) {
     if (e instanceof Error && e.message === 'HTTP 404') {
+      setCache(cacheKey, null)
       return null
     }
     throw e
@@ -187,14 +191,21 @@ async function fetchLatestRelease(owner: string, repo: string): Promise<string |
 }
 
 async function fetchSnapshotVersion(owner: string, repo: string): Promise<string | null> {
-  const url = `${API_BASE}/repos/${owner}/${repo}/contents/build.gradle.kts`
   const cacheKey = `gh:snapshot:${owner}/${repo}`
+  const cached = getCache<string | null>(cacheKey)
+  if (cached && Date.now() - cached.timestamp < CACHE_TTL_MS) {
+    return cached.data
+  }
 
   try {
-    const data = await fetchWithCache<{ content: string }>(url, cacheKey)
+    const data = await fetchJSON<{ content: string }>(
+      `${API_BASE}/repos/${owner}/${repo}/contents/build.gradle.kts`
+    )
     const content = atob(data.content.replace(/\n/g, ''))
     const match = content.match(/version\s*=\s*"([^"]+)"/)
-    return match ? match[1] : null
+    const version = match ? match[1] : null
+    setCache(cacheKey, version)
+    return version
   } catch {
     return null
   }
