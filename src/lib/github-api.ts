@@ -2,7 +2,7 @@ import { CACHE_TTL_MS, EXCLUDED_WORKFLOWS } from '../config'
 import type { RateLimitInfo, WorkflowRun, WorkflowStatus } from '../types'
 
 const API_BASE = 'https://api.github.com'
-const REQUEST_INTERVAL_MS = 300
+const REQUEST_INTERVAL_MS = 100
 const TOKEN_KEY = 'gh:token'
 
 let authToken: string | null = localStorage.getItem(TOKEN_KEY)

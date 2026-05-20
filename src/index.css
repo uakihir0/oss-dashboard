@@ -405,6 +405,11 @@ a:hover {
   display: flex;
   flex-direction: column;
   gap: 2px;
+  overflow: hidden;
+}
+
+.workflow-item {
+  min-width: 0;
 }
 
 .workflow-item a {
@@ -416,13 +421,13 @@ a:hover {
   color: var(--ink-muted);
   font-size: 13px;
   transition: background 0.15s, color 0.15s;
-  white-space: nowrap;
-  overflow: hidden;
+  min-width: 0;
 }
 
 .workflow-name {
   overflow: hidden;
   text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 .workflow-item a:hover {
