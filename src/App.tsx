@@ -1,8 +1,16 @@
+import { Dashboard } from './components/Dashboard'
+import { useGitHubData } from './hooks/useGitHubData'
+
 function App() {
+  const { repos, rateLimit, lastUpdated, refresh } = useGitHubData()
+
   return (
-    <div className="app">
-      <h1>OSS Dashboard</h1>
-    </div>
+    <Dashboard
+      repos={repos}
+      rateLimit={rateLimit}
+      lastUpdated={lastUpdated}
+      onRefresh={refresh}
+    />
   )
 }
 
