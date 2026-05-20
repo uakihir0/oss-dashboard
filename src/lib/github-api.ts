@@ -2,41 +2,12 @@ import { CACHE_TTL_MS, EXCLUDED_WORKFLOWS } from '../config'
 import type { RateLimitInfo, WorkflowRun, WorkflowStatus } from '../types'
 
 const API_BASE = 'https://api.github.com'
-const REQUEST_INTERVAL_MS = 500
+const REQUEST_INTERVAL_MS = 1000
 
 interface CacheEntry<T> {
   data: T
   timestamp: number
   etag: string | null
-}
-
-const requestQueue: (() => void)[] = []
-let processing = false
-
-function delay(ms: number): Promise<void> {
-  return new Promise(resolve => setTimeout(resolve, ms))
-}
-
-async function processQueue() {
-  if (processing) return
-  processing = true
-  while (requestQueue.length > 0) {
-    const next = requestQueue.shift()!
-    next()
-    if (requestQueue.length > 0) {
-      await delay(REQUEST_INTERVAL_MS)
-    }
-  }
-  processing = false
-}
-
-function enqueueRequest<T>(fn: () => Promise<T>): Promise<T> {
-  return new Promise<T>((resolve, reject) => {
-    requestQueue.push(() => {
-      fn().then(resolve).catch(reject)
-    })
-    processQueue()
-  })
 }
 
 let rateLimitInfo: RateLimitInfo = {
@@ -45,8 +16,14 @@ let rateLimitInfo: RateLimitInfo = {
   resetAt: new Date(),
 }
 
+let rateLimited = false
+
 export function getRateLimit(): RateLimitInfo {
-  return rateLimitInfo
+  return { ...rateLimitInfo }
+}
+
+export function isRateLimited(): boolean {
+  return rateLimited
 }
 
 function updateRateLimit(headers: Headers) {
@@ -57,17 +34,42 @@ function updateRateLimit(headers: Headers) {
   if (remaining !== null) rateLimitInfo.remaining = parseInt(remaining, 10)
   if (limit !== null) rateLimitInfo.limit = parseInt(limit, 10)
   if (reset !== null) rateLimitInfo.resetAt = new Date(parseInt(reset, 10) * 1000)
+
+  if (rateLimitInfo.remaining <= 0) {
+    rateLimited = true
+  } else {
+    rateLimited = false
+  }
+}
+
+function delay(ms: number): Promise<void> {
+  return new Promise(resolve => setTimeout(resolve, ms))
+}
+
+function getCacheEntry<T>(cacheKey: string): CacheEntry<T> | null {
+  const cached = localStorage.getItem(cacheKey)
+  if (!cached) return null
+  return JSON.parse(cached) as CacheEntry<T>
+}
+
+function setCacheEntry<T>(cacheKey: string, data: T, etag: string | null) {
+  localStorage.setItem(cacheKey, JSON.stringify({
+    data,
+    timestamp: Date.now(),
+    etag,
+  } satisfies CacheEntry<T>))
 }
 
 async function fetchWithCache<T>(url: string, cacheKey: string): Promise<T> {
-  const cached = localStorage.getItem(cacheKey)
-  let cacheEntry: CacheEntry<T> | null = null
+  const cacheEntry = getCacheEntry<T>(cacheKey)
 
-  if (cached) {
-    cacheEntry = JSON.parse(cached) as CacheEntry<T>
-    if (Date.now() - cacheEntry.timestamp < CACHE_TTL_MS) {
-      return cacheEntry.data
-    }
+  if (cacheEntry && Date.now() - cacheEntry.timestamp < CACHE_TTL_MS) {
+    return cacheEntry.data
+  }
+
+  if (rateLimited) {
+    if (cacheEntry) return cacheEntry.data
+    throw new Error(`Rate limited (resets ${rateLimitInfo.resetAt.toLocaleTimeString()})`)
   }
 
   const headers: Record<string, string> = {}
@@ -75,20 +77,18 @@ async function fetchWithCache<T>(url: string, cacheKey: string): Promise<T> {
     headers['If-None-Match'] = cacheEntry.etag
   }
 
-  const response = await enqueueRequest(() => fetch(url, { headers }))
+  const response = await fetch(url, { headers })
   updateRateLimit(response.headers)
 
   if (response.status === 304 && cacheEntry) {
-    localStorage.setItem(cacheKey, JSON.stringify({
-      ...cacheEntry,
-      timestamp: Date.now(),
-    }))
+    setCacheEntry(cacheKey, cacheEntry.data, cacheEntry.etag)
     return cacheEntry.data
   }
 
-  if (response.status === 403) {
+  if (response.status === 403 || response.status === 429) {
+    rateLimited = true
     if (cacheEntry) return cacheEntry.data
-    throw new Error('Rate limited')
+    throw new Error(`Rate limited (resets ${rateLimitInfo.resetAt.toLocaleTimeString()})`)
   }
 
   if (!response.ok) {
@@ -97,13 +97,7 @@ async function fetchWithCache<T>(url: string, cacheKey: string): Promise<T> {
 
   const data = await response.json()
   const etag = response.headers.get('etag')
-
-  localStorage.setItem(cacheKey, JSON.stringify({
-    data,
-    timestamp: Date.now(),
-    etag,
-  } satisfies CacheEntry<T>))
-
+  setCacheEntry(cacheKey, data, etag)
   return data
 }
 
@@ -116,7 +110,28 @@ export function clearCache() {
   }
 }
 
-export async function fetchWorkflowStatuses(owner: string, repo: string, branch: string): Promise<WorkflowStatus[]> {
+export async function fetchRepoData(
+  owner: string,
+  repo: string,
+  branch: string,
+): Promise<{ workflows: WorkflowStatus[]; release: string | null; snapshot: string | null }> {
+  const workflows = await fetchWorkflowStatuses(owner, repo, branch)
+  if (rateLimited) {
+    return { workflows, release: null, snapshot: null }
+  }
+  await delay(REQUEST_INTERVAL_MS)
+
+  const release = await fetchLatestRelease(owner, repo)
+  if (rateLimited) {
+    return { workflows, release, snapshot: null }
+  }
+  await delay(REQUEST_INTERVAL_MS)
+
+  const snapshot = await fetchSnapshotVersion(owner, repo)
+  return { workflows, release, snapshot }
+}
+
+async function fetchWorkflowStatuses(owner: string, repo: string, branch: string): Promise<WorkflowStatus[]> {
   const url = `${API_BASE}/repos/${owner}/${repo}/actions/runs?per_page=30&branch=${branch}&exclude_pull_requests=true`
   const cacheKey = `gh:runs:${owner}/${repo}`
 
@@ -149,7 +164,7 @@ function mapConclusion(run: WorkflowRun): WorkflowStatus['conclusion'] {
   return 'unknown'
 }
 
-export async function fetchLatestRelease(owner: string, repo: string): Promise<string | null> {
+async function fetchLatestRelease(owner: string, repo: string): Promise<string | null> {
   const url = `${API_BASE}/repos/${owner}/${repo}/releases/latest`
   const cacheKey = `gh:release:${owner}/${repo}`
 
@@ -164,7 +179,7 @@ export async function fetchLatestRelease(owner: string, repo: string): Promise<s
   }
 }
 
-export async function fetchSnapshotVersion(owner: string, repo: string): Promise<string | null> {
+async function fetchSnapshotVersion(owner: string, repo: string): Promise<string | null> {
   const url = `${API_BASE}/repos/${owner}/${repo}/contents/build.gradle.kts`
   const cacheKey = `gh:snapshot:${owner}/${repo}`
 

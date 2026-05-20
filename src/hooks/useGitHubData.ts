@@ -1,7 +1,13 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
 import { REPOS } from '../config'
-import { clearCache, fetchLatestRelease, fetchSnapshotVersion, fetchWorkflowStatuses, getRateLimit } from '../lib/github-api'
+import { clearCache, fetchRepoData, getRateLimit, isRateLimited } from '../lib/github-api'
 import type { RateLimitInfo, RepoData } from '../types'
+
+const REQUEST_INTERVAL_MS = 1000
+
+function delay(ms: number): Promise<void> {
+  return new Promise(resolve => setTimeout(resolve, ms))
+}
 
 export function useGitHubData() {
   const [repos, setRepos] = useState<RepoData[]>(
@@ -31,12 +37,21 @@ export function useGitHubData() {
       if (abortRef.current) break
       const config = REPOS[i]
 
+      if (isRateLimited()) {
+        setRepos(prev => prev.map((r, idx) =>
+          idx >= i
+            ? { ...r, loading: false, error: `Rate limited (resets ${getRateLimit().resetAt.toLocaleTimeString()})` }
+            : r
+        ))
+        break
+      }
+
       try {
-        const [workflows, release, snapshot] = await Promise.all([
-          fetchWorkflowStatuses(config.owner, config.name, config.mainBranch),
-          fetchLatestRelease(config.owner, config.name),
-          fetchSnapshotVersion(config.owner, config.name),
-        ])
+        const { workflows, release, snapshot } = await fetchRepoData(
+          config.owner,
+          config.name,
+          config.mainBranch,
+        )
 
         setRepos(prev => prev.map((r, idx) =>
           idx === i
@@ -44,23 +59,38 @@ export function useGitHubData() {
             : r
         ))
       } catch (e) {
+        const msg = e instanceof Error ? e.message : 'Unknown error'
         setRepos(prev => prev.map((r, idx) =>
           idx === i
-            ? { config, workflows: [], versions: { release: null, snapshot: null }, loading: false, error: e instanceof Error ? e.message : 'Unknown error' }
+            ? { config, workflows: [], versions: { release: null, snapshot: null }, loading: false, error: msg }
             : r
         ))
+
+        if (isRateLimited()) {
+          setRepos(prev => prev.map((r, idx) =>
+            idx > i && r.loading
+              ? { ...r, loading: false, error: msg }
+              : r
+          ))
+          break
+        }
       }
 
       setRateLimit(getRateLimit())
+
+      if (i < REPOS.length - 1 && !isRateLimited()) {
+        await delay(REQUEST_INTERVAL_MS)
+      }
     }
 
+    setRateLimit(getRateLimit())
     setLastUpdated(new Date())
   }, [])
 
   const refresh = useCallback(() => {
     abortRef.current = true
     clearCache()
-    fetchAll()
+    setTimeout(() => fetchAll(), 100)
   }, [fetchAll])
 
   useEffect(() => {

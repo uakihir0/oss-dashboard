@@ -127,6 +127,15 @@ a:hover {
   color: var(--ink-tertiary);
 }
 
+.rate-limit-exhausted {
+  color: var(--failure);
+}
+
+.refresh-btn:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+
 .refresh-btn {
   padding: 8px 14px;
   border: 1px solid var(--hairline);

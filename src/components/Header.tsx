@@ -7,6 +7,8 @@ interface Props {
 }
 
 export function Header({ rateLimit, lastUpdated, onRefresh }: Props) {
+  const isLimited = rateLimit.remaining <= 0
+
   return (
     <header className="header">
       <div className="header-left">
@@ -18,10 +20,11 @@ export function Header({ rateLimit, lastUpdated, onRefresh }: Props) {
         )}
       </div>
       <div className="header-right">
-        <span className="rate-limit">
+        <span className={`rate-limit ${isLimited ? 'rate-limit-exhausted' : ''}`}>
           API: {rateLimit.remaining}/{rateLimit.limit}
+          {isLimited && ` (resets ${rateLimit.resetAt.toLocaleTimeString()})`}
         </span>
-        <button className="refresh-btn" onClick={onRefresh}>
+        <button className="refresh-btn" onClick={onRefresh} disabled={isLimited}>
           Refresh
         </button>
       </div>
