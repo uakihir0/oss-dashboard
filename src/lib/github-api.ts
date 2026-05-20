@@ -2,7 +2,6 @@ import { CACHE_TTL_MS, EXCLUDED_WORKFLOWS } from '../config'
 import type { RateLimitInfo, WorkflowRun, WorkflowStatus } from '../types'
 
 const API_BASE = 'https://api.github.com'
-const REQUEST_INTERVAL_MS = 0
 const TOKEN_KEY = 'gh:token'
 
 let authToken: string | null = localStorage.getItem(TOKEN_KEY)
@@ -57,10 +56,6 @@ function updateRateLimit(headers: Headers) {
   } else {
     rateLimited = false
   }
-}
-
-function delay(ms: number): Promise<void> {
-  return new Promise(resolve => setTimeout(resolve, ms))
 }
 
 function getCacheEntry<T>(cacheKey: string): CacheEntry<T> | null {
@@ -135,24 +130,16 @@ export async function fetchRepoData(
   repo: string,
   branch: string,
 ): Promise<{ workflows: WorkflowStatus[]; release: string | null; snapshot: string | null }> {
-  const workflows = await fetchWorkflowStatuses(owner, repo, branch)
-  if (rateLimited) {
-    return { workflows, release: null, snapshot: null }
-  }
-  await delay(REQUEST_INTERVAL_MS)
-
-  const release = await fetchLatestRelease(owner, repo)
-  if (rateLimited) {
-    return { workflows, release, snapshot: null }
-  }
-  await delay(REQUEST_INTERVAL_MS)
-
-  const snapshot = await fetchSnapshotVersion(owner, repo)
+  const [workflows, release, snapshot] = await Promise.all([
+    fetchWorkflowStatuses(owner, repo, branch),
+    fetchLatestRelease(owner, repo),
+    fetchSnapshotVersion(owner, repo),
+  ])
   return { workflows, release, snapshot }
 }
 
-async function fetchWorkflowStatuses(owner: string, repo: string, branch: string): Promise<WorkflowStatus[]> {
-  const url = `${API_BASE}/repos/${owner}/${repo}/actions/runs?per_page=30&branch=${branch}&exclude_pull_requests=true`
+async function fetchWorkflowStatuses(owner: string, repo: string, _branch: string): Promise<WorkflowStatus[]> {
+  const url = `${API_BASE}/repos/${owner}/${repo}/actions/runs?per_page=100&exclude_pull_requests=true`
   const cacheKey = `gh:runs:${owner}/${repo}`
 
   const data = await fetchWithCache<{ workflow_runs: WorkflowRun[] }>(url, cacheKey)
