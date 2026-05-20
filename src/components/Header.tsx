@@ -27,7 +27,7 @@ export function Header({ rateLimit, lastUpdated, hasToken, onRefresh, onOpenSett
           {isLimited && ` (resets ${rateLimit.resetAt.toLocaleTimeString()})`}
         </span>
         <button className="settings-btn" onClick={onOpenSettings} title="Token settings">
-          {hasToken ? '🔑' : '⚙'}
+          {hasToken ? 'Token ✓' : 'Set Token'}
         </button>
         <button className="refresh-btn" onClick={onRefresh} disabled={isLimited}>
           Refresh

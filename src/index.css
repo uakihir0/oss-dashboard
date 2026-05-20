@@ -137,17 +137,22 @@ a:hover {
 }
 
 .settings-btn {
-  background: none;
-  border: none;
-  font-size: 16px;
+  background: var(--surface-2);
+  border: 1px solid var(--hairline);
+  border-radius: var(--radius-md);
+  font-family: var(--font-text);
+  font-size: 12px;
+  font-weight: 500;
+  color: var(--ink-muted);
   cursor: pointer;
-  padding: 4px 8px;
-  border-radius: var(--radius-sm);
-  transition: background 0.15s;
+  padding: 6px 12px;
+  transition: border-color 0.15s, background 0.15s;
 }
 
 .settings-btn:hover {
-  background: var(--surface-2);
+  border-color: var(--hairline-strong);
+  background: var(--surface-3);
+  color: var(--ink);
 }
 
 /* Token Dialog */
