@@ -140,14 +140,14 @@ export async function fetchRepoData(
   return { workflows, release, snapshot }
 }
 
-async function fetchWorkflowStatuses(owner: string, repo: string, _branch: string): Promise<WorkflowStatus[]> {
+async function fetchWorkflowStatuses(owner: string, repo: string, branch: string): Promise<WorkflowStatus[]> {
   const cacheKey = `gh:runs:${owner}/${repo}`
   const cached = getCache<WorkflowStatus[]>(cacheKey)
   if (cached && Date.now() - cached.timestamp < CACHE_TTL_MS) {
     return cached.data
   }
 
-  const url = `${API_BASE}/repos/${owner}/${repo}/actions/runs?per_page=100&exclude_pull_requests=true`
+  const url = `${API_BASE}/repos/${owner}/${repo}/actions/runs?per_page=100&branch=${branch}&exclude_pull_requests=true`
   const data = await fetchJSON<{ workflow_runs: WorkflowRun[] }>(url)
   const runs = data.workflow_runs
 
