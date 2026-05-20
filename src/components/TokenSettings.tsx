@@ -27,6 +27,7 @@ export function TokenSettings({ token, onSave, onClose }: Props) {
         <h2>GitHub Token</h2>
         <p className="token-description">
           Set a Personal Access Token to increase the API rate limit from 60 to 5,000 requests/hour.
+          No scopes are required — a scopeless classic token or a read-only fine-grained token is sufficient.
           The token is stored in your browser only.
         </p>
         <input
