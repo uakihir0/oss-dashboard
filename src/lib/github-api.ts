@@ -2,11 +2,41 @@ import { CACHE_TTL_MS, EXCLUDED_WORKFLOWS } from '../config'
 import type { RateLimitInfo, WorkflowRun, WorkflowStatus } from '../types'
 
 const API_BASE = 'https://api.github.com'
+const REQUEST_INTERVAL_MS = 500
 
 interface CacheEntry<T> {
   data: T
   timestamp: number
   etag: string | null
+}
+
+const requestQueue: (() => void)[] = []
+let processing = false
+
+function delay(ms: number): Promise<void> {
+  return new Promise(resolve => setTimeout(resolve, ms))
+}
+
+async function processQueue() {
+  if (processing) return
+  processing = true
+  while (requestQueue.length > 0) {
+    const next = requestQueue.shift()!
+    next()
+    if (requestQueue.length > 0) {
+      await delay(REQUEST_INTERVAL_MS)
+    }
+  }
+  processing = false
+}
+
+function enqueueRequest<T>(fn: () => Promise<T>): Promise<T> {
+  return new Promise<T>((resolve, reject) => {
+    requestQueue.push(() => {
+      fn().then(resolve).catch(reject)
+    })
+    processQueue()
+  })
 }
 
 let rateLimitInfo: RateLimitInfo = {
@@ -45,7 +75,7 @@ async function fetchWithCache<T>(url: string, cacheKey: string): Promise<T> {
     headers['If-None-Match'] = cacheEntry.etag
   }
 
-  const response = await fetch(url, { headers })
+  const response = await enqueueRequest(() => fetch(url, { headers }))
   updateRateLimit(response.headers)
 
   if (response.status === 304 && cacheEntry) {
