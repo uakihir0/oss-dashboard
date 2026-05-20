@@ -136,6 +136,119 @@ a:hover {
   cursor: not-allowed;
 }
 
+.settings-btn {
+  background: none;
+  border: none;
+  font-size: 16px;
+  cursor: pointer;
+  padding: 4px 8px;
+  border-radius: var(--radius-sm);
+  transition: background 0.15s;
+}
+
+.settings-btn:hover {
+  background: var(--surface-2);
+}
+
+/* Token Dialog */
+.token-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.7);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 100;
+}
+
+.token-dialog {
+  background: var(--surface-1);
+  border: 1px solid var(--hairline);
+  border-radius: var(--radius-lg);
+  padding: var(--space-lg);
+  width: 420px;
+  max-width: 90vw;
+}
+
+.token-dialog h2 {
+  font-family: var(--font-display);
+  font-size: 18px;
+  font-weight: 600;
+  color: var(--ink);
+  margin-bottom: var(--space-xs);
+}
+
+.token-description {
+  font-size: 13px;
+  color: var(--ink-subtle);
+  margin-bottom: var(--space-md);
+  line-height: 1.5;
+}
+
+.token-input {
+  width: 100%;
+  padding: 8px 12px;
+  background: var(--surface-2);
+  border: 1px solid var(--hairline);
+  border-radius: var(--radius-md);
+  color: var(--ink);
+  font-family: var(--font-mono);
+  font-size: 13px;
+  outline: none;
+  transition: border-color 0.15s;
+}
+
+.token-input:focus {
+  border-color: var(--primary);
+}
+
+.token-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: var(--space-xs);
+  margin-top: var(--space-md);
+}
+
+.token-btn {
+  padding: 8px 14px;
+  border-radius: var(--radius-md);
+  font-family: var(--font-text);
+  font-size: 14px;
+  font-weight: 500;
+  cursor: pointer;
+  border: none;
+  transition: background 0.15s;
+}
+
+.token-btn-primary {
+  background: var(--primary);
+  color: var(--on-primary);
+}
+
+.token-btn-primary:hover {
+  background: var(--primary-hover);
+}
+
+.token-btn-secondary {
+  background: var(--surface-2);
+  color: var(--ink);
+  border: 1px solid var(--hairline);
+}
+
+.token-btn-secondary:hover {
+  background: var(--surface-3);
+}
+
+.token-btn-danger {
+  background: none;
+  color: var(--failure);
+  margin-right: auto;
+}
+
+.token-btn-danger:hover {
+  background: var(--surface-2);
+}
+
 .refresh-btn {
   padding: 8px 14px;
   border: 1px solid var(--hairline);

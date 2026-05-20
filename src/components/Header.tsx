@@ -3,10 +3,12 @@ import type { RateLimitInfo } from '../types'
 interface Props {
   rateLimit: RateLimitInfo
   lastUpdated: Date | null
+  hasToken: boolean
   onRefresh: () => void
+  onOpenSettings: () => void
 }
 
-export function Header({ rateLimit, lastUpdated, onRefresh }: Props) {
+export function Header({ rateLimit, lastUpdated, hasToken, onRefresh, onOpenSettings }: Props) {
   const isLimited = rateLimit.remaining <= 0
 
   return (
@@ -24,6 +26,9 @@ export function Header({ rateLimit, lastUpdated, onRefresh }: Props) {
           API: {rateLimit.remaining}/{rateLimit.limit}
           {isLimited && ` (resets ${rateLimit.resetAt.toLocaleTimeString()})`}
         </span>
+        <button className="settings-btn" onClick={onOpenSettings} title="Token settings">
+          {hasToken ? '🔑' : '⚙'}
+        </button>
         <button className="refresh-btn" onClick={onRefresh} disabled={isLimited}>
           Refresh
         </button>

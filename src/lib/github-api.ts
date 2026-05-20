@@ -3,6 +3,23 @@ import type { RateLimitInfo, WorkflowRun, WorkflowStatus } from '../types'
 
 const API_BASE = 'https://api.github.com'
 const REQUEST_INTERVAL_MS = 1000
+const TOKEN_KEY = 'gh:token'
+
+let authToken: string | null = localStorage.getItem(TOKEN_KEY)
+
+export function getToken(): string | null {
+  return authToken
+}
+
+export function setToken(token: string | null) {
+  authToken = token
+  if (token) {
+    localStorage.setItem(TOKEN_KEY, token)
+  } else {
+    localStorage.removeItem(TOKEN_KEY)
+  }
+  rateLimited = false
+}
 
 interface CacheEntry<T> {
   data: T
@@ -73,6 +90,9 @@ async function fetchWithCache<T>(url: string, cacheKey: string): Promise<T> {
   }
 
   const headers: Record<string, string> = {}
+  if (authToken) {
+    headers['Authorization'] = `Bearer ${authToken}`
+  }
   if (cacheEntry?.etag) {
     headers['If-None-Match'] = cacheEntry.etag
   }
