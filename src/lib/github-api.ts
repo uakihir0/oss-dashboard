@@ -1,5 +1,5 @@
 import { CACHE_TTL_MS, EXCLUDED_WORKFLOWS } from '../config'
-import type { RateLimitInfo, WorkflowRun, WorkflowStatus } from '../types'
+import type { RateLimitInfo, RepoCounts, WorkflowRun, WorkflowStatus } from '../types'
 
 const API_BASE = 'https://api.github.com'
 const TOKEN_KEY = 'gh:token'
@@ -121,6 +121,7 @@ export function clearRepoCache(owner: string, repo: string) {
     `${prefix}runs:${owner}/${repo}`,
     `${prefix}release:${owner}/${repo}`,
     `${prefix}snapshot:${owner}/${repo}`,
+    `${prefix}counts:${owner}/${repo}`,
   ]
   for (const key of patterns) {
     localStorage.removeItem(key)
@@ -131,13 +132,14 @@ export async function fetchRepoData(
   owner: string,
   repo: string,
   branch: string,
-): Promise<{ workflows: WorkflowStatus[]; release: string | null; snapshot: string | null }> {
-  const [workflows, release, snapshot] = await Promise.all([
+): Promise<{ workflows: WorkflowStatus[]; release: string | null; snapshot: string | null; counts: RepoCounts }> {
+  const [workflows, release, snapshot, counts] = await Promise.all([
     fetchWorkflowStatuses(owner, repo, branch),
     fetchLatestRelease(owner, repo),
     fetchSnapshotVersion(owner, repo),
+    fetchRepoCounts(owner, repo),
   ])
-  return { workflows, release, snapshot }
+  return { workflows, release, snapshot, counts }
 }
 
 async function fetchWorkflowStatuses(owner: string, repo: string, branch: string): Promise<WorkflowStatus[]> {
@@ -227,5 +229,32 @@ async function fetchSnapshotVersion(owner: string, repo: string): Promise<string
     return version
   } catch {
     return null
+  }
+}
+
+async function fetchRepoCounts(owner: string, repo: string): Promise<RepoCounts> {
+  const cacheKey = `gh:counts:${owner}/${repo}`
+  const cached = getCache<RepoCounts>(cacheKey)
+  if (cached && Date.now() - cached.timestamp < CACHE_TTL_MS) {
+    return cached.data
+  }
+
+  try {
+    const [issuesData, prsData] = await Promise.all([
+      fetchJSON<{ total_count: number }>(
+        `${API_BASE}/search/issues?q=repo:${owner}/${repo}+type:issue+state:open&per_page=1`
+      ),
+      fetchJSON<{ total_count: number }>(
+        `${API_BASE}/search/issues?q=repo:${owner}/${repo}+type:pr+state:open&per_page=1`
+      ),
+    ])
+    const counts: RepoCounts = {
+      openIssues: issuesData.total_count,
+      openPRs: prsData.total_count,
+    }
+    setCache(cacheKey, counts)
+    return counts
+  } catch {
+    return { openIssues: 0, openPRs: 0 }
   }
 }

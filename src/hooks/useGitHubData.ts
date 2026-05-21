@@ -11,6 +11,7 @@ export function useGitHubData() {
       config,
       workflows: [],
       versions: { release: null, snapshot: null },
+      counts: { openIssues: 0, openPRs: 0 },
       loading: true,
       error: null,
     }))
@@ -25,6 +26,7 @@ export function useGitHubData() {
       config,
       workflows: [],
       versions: { release: null, snapshot: null },
+      counts: { openIssues: 0, openPRs: 0 },
       loading: true,
       error: null,
     })))
@@ -38,7 +40,7 @@ export function useGitHubData() {
         const config = REPOS[i]
 
         try {
-          const { workflows, release, snapshot } = await fetchRepoData(
+          const { workflows, release, snapshot, counts } = await fetchRepoData(
             config.owner,
             config.name,
             config.mainBranch,
@@ -46,14 +48,14 @@ export function useGitHubData() {
 
           setRepos(prev => prev.map((r, idx) =>
             idx === i
-              ? { config, workflows, versions: { release, snapshot }, loading: false, error: null }
+              ? { config, workflows, versions: { release, snapshot }, counts, loading: false, error: null }
               : r
           ))
         } catch (e) {
           const msg = e instanceof Error ? e.message : 'Unknown error'
           setRepos(prev => prev.map((r, idx) =>
             idx === i
-              ? { config, workflows: [], versions: { release: null, snapshot: null }, loading: false, error: msg }
+              ? { config, workflows: [], versions: { release: null, snapshot: null }, counts: { openIssues: 0, openPRs: 0 }, loading: false, error: msg }
               : r
           ))
         }
@@ -91,21 +93,21 @@ export function useGitHubData() {
     ))
 
     try {
-      const { workflows, release, snapshot } = await fetchRepoData(
+      const { workflows, release, snapshot, counts } = await fetchRepoData(
         config.owner,
         config.name,
         config.mainBranch,
       )
       setRepos(prev => prev.map((r, idx) =>
         idx === i
-          ? { config, workflows, versions: { release, snapshot }, loading: false, error: null }
+          ? { config, workflows, versions: { release, snapshot }, counts, loading: false, error: null }
           : r
       ))
     } catch (e) {
       const msg = e instanceof Error ? e.message : 'Unknown error'
       setRepos(prev => prev.map((r, idx) =>
         idx === i
-          ? { config, workflows: [], versions: { release: null, snapshot: null }, loading: false, error: msg }
+          ? { config, workflows: [], versions: { release: null, snapshot: null }, counts: { openIssues: 0, openPRs: 0 }, loading: false, error: msg }
           : r
       ))
     }

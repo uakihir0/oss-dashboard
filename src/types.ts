@@ -30,10 +30,16 @@ export interface VersionInfo {
   snapshot: string | null
 }
 
+export interface RepoCounts {
+  openIssues: number
+  openPRs: number
+}
+
 export interface RepoData {
   config: RepoConfig
   workflows: WorkflowStatus[]
   versions: VersionInfo
+  counts: RepoCounts
   loading: boolean
   error: string | null
 }

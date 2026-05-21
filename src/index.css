@@ -462,6 +462,33 @@ a:hover {
   line-height: 1.4;
 }
 
+.repo-counts {
+  display: flex;
+  gap: var(--space-xs);
+  margin-top: var(--space-xs);
+}
+
+.repo-count-badge {
+  font-size: 11px;
+  font-weight: 500;
+  padding: 2px 8px;
+  border-radius: var(--radius-pill);
+  background: var(--surface-2);
+  transition: background 0.15s;
+}
+
+.repo-count-badge:hover {
+  background: var(--surface-3);
+}
+
+.count-issues {
+  color: var(--warning);
+}
+
+.count-prs {
+  color: var(--primary-hover);
+}
+
 /* Version Info */
 .version-info {
   margin-bottom: var(--space-sm);

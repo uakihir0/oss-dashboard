@@ -16,7 +16,7 @@ function getOverallStatus(repo: RepoData): 'success' | 'failure' | 'unknown' {
 }
 
 export function RepoCard({ repo, onRefresh }: Props) {
-  const { config, workflows, versions, loading, error } = repo
+  const { config, workflows, versions, counts, loading, error } = repo
   const repoUrl = `https://github.com/${config.owner}/${config.name}`
   const overall = getOverallStatus(repo)
 
@@ -40,6 +40,30 @@ export function RepoCard({ repo, onRefresh }: Props) {
           </button>
         </div>
         <p className="repo-description">{config.description}</p>
+        {!loading && !error && (counts.openIssues > 0 || counts.openPRs > 0) && (
+          <div className="repo-counts">
+            {counts.openIssues > 0 && (
+              <a
+                href={`${repoUrl}/issues`}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="repo-count-badge count-issues"
+              >
+                {counts.openIssues} issue{counts.openIssues !== 1 && 's'}
+              </a>
+            )}
+            {counts.openPRs > 0 && (
+              <a
+                href={`${repoUrl}/pulls`}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="repo-count-badge count-prs"
+              >
+                {counts.openPRs} PR{counts.openPRs !== 1 && 's'}
+              </a>
+            )}
+          </div>
+        )}
       </div>
 
       {loading && <div className="loading">Loading...</div>}
