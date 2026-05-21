@@ -4,6 +4,7 @@ export interface RepoConfig {
   displayName: string
   description: string
   mainBranch: string
+  group: string
 }
 
 export interface WorkflowRun {

@@ -273,6 +273,71 @@ a:hover {
   background: var(--surface-2);
 }
 
+/* Group Section */
+.group-section {
+  margin-bottom: var(--space-xl);
+}
+
+.group-header {
+  display: flex;
+  align-items: center;
+  gap: var(--space-xs);
+  margin-bottom: var(--space-md);
+}
+
+.group-status {
+  font-size: 12px;
+}
+
+.group-status-success {
+  color: var(--success);
+}
+
+.group-status-failure {
+  color: var(--failure);
+}
+
+.group-status-loading {
+  color: var(--warning);
+  animation: pulse 1.5s ease-in-out infinite;
+}
+
+.group-status-unknown {
+  color: var(--ink-tertiary);
+}
+
+.group-name {
+  font-family: var(--font-display);
+  font-size: 16px;
+  font-weight: 600;
+  color: var(--ink);
+  letter-spacing: -0.2px;
+}
+
+.group-label {
+  font-size: 12px;
+  font-weight: 500;
+  padding: 2px 8px;
+  border-radius: var(--radius-pill);
+  background: var(--surface-2);
+}
+
+.group-label-success {
+  color: var(--success);
+}
+
+.group-label-failure {
+  color: var(--failure);
+}
+
+.group-label-loading {
+  color: var(--warning);
+}
+
+.group-label-unknown {
+  color: var(--ink-tertiary);
+}
+
 /* Repository Grid */
 .repo-grid {
   display: grid;

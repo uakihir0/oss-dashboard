@@ -1,6 +1,7 @@
+import { useMemo } from 'react'
 import type { RateLimitInfo, RepoData } from '../types'
+import { GroupSection } from './GroupSection'
 import { Header } from './Header'
-import { RepoCard } from './RepoCard'
 
 interface Props {
   repos: RepoData[]
@@ -13,6 +14,16 @@ interface Props {
 }
 
 export function Dashboard({ repos, rateLimit, lastUpdated, hasToken, onRefresh, onRefreshRepo, onOpenSettings }: Props) {
+  const groups = useMemo(() => {
+    const map = new Map<string, RepoData[]>()
+    for (const repo of repos) {
+      const group = repo.config.group
+      if (!map.has(group)) map.set(group, [])
+      map.get(group)!.push(repo)
+    }
+    return Array.from(map.entries())
+  }, [repos])
+
   return (
     <div className="dashboard">
       <Header
@@ -22,11 +33,14 @@ export function Dashboard({ repos, rateLimit, lastUpdated, hasToken, onRefresh, 
         onRefresh={onRefresh}
         onOpenSettings={onOpenSettings}
       />
-      <div className="repo-grid">
-        {repos.map(repo => (
-          <RepoCard key={repo.config.name} repo={repo} onRefresh={onRefreshRepo} />
-        ))}
-      </div>
+      {groups.map(([name, groupRepos]) => (
+        <GroupSection
+          key={name}
+          name={name}
+          repos={groupRepos}
+          onRefreshRepo={onRefreshRepo}
+        />
+      ))}
     </div>
   )
 }

@@ -7,6 +7,7 @@ export const REPOS: RepoConfig[] = [
     displayName: 'planetlink',
     description: 'Kotlin Multiplatform Multi Social Media library',
     mainBranch: 'main',
+    group: 'Social Media',
   },
   {
     owner: 'uakihir0',
@@ -14,6 +15,7 @@ export const REPOS: RepoConfig[] = [
     displayName: 'kbsky',
     description: 'Kotlin Multiplatform Bluesky/ATProtocol client',
     mainBranch: 'main',
+    group: 'Social Media',
   },
   {
     owner: 'uakihir0',
@@ -21,6 +23,7 @@ export const REPOS: RepoConfig[] = [
     displayName: 'kmastodon',
     description: 'Kotlin Multiplatform Mastodon client',
     mainBranch: 'main',
+    group: 'Social Media',
   },
   {
     owner: 'uakihir0',
@@ -28,6 +31,7 @@ export const REPOS: RepoConfig[] = [
     displayName: 'kmisskey',
     description: 'Kotlin Multiplatform Misskey library',
     mainBranch: 'main',
+    group: 'Social Media',
   },
   {
     owner: 'uakihir0',
@@ -35,6 +39,7 @@ export const REPOS: RepoConfig[] = [
     displayName: 'kmatrix',
     description: 'Kotlin Multiplatform Matrix library',
     mainBranch: 'main',
+    group: 'Social Media',
   },
   {
     owner: 'uakihir0',
@@ -42,6 +47,7 @@ export const REPOS: RepoConfig[] = [
     displayName: 'knostr',
     description: 'Kotlin Multiplatform Nostr library',
     mainBranch: 'main',
+    group: 'Social Media',
   },
   {
     owner: 'uakihir0',
@@ -49,6 +55,7 @@ export const REPOS: RepoConfig[] = [
     displayName: 'ktumblr',
     description: 'Kotlin Multiplatform Tumblr library',
     mainBranch: 'main',
+    group: 'Social Media',
   },
   {
     owner: 'uakihir0',
@@ -56,6 +63,7 @@ export const REPOS: RepoConfig[] = [
     displayName: 'kslack',
     description: 'Kotlin Multiplatform Slack library',
     mainBranch: 'main',
+    group: 'Social Media',
   },
   {
     owner: 'uakihir0',
@@ -63,6 +71,7 @@ export const REPOS: RepoConfig[] = [
     displayName: 'khttpclient',
     description: 'Kotlin Multiplatform simple HTTP request library',
     mainBranch: 'main',
+    group: 'Infrastructure',
   },
   {
     owner: 'uakihir0',
@@ -70,6 +79,7 @@ export const REPOS: RepoConfig[] = [
     displayName: 'kgrpc',
     description: 'Kotlin Multiplatform gRPC library',
     mainBranch: 'main',
+    group: 'Infrastructure',
   },
 ]
 
