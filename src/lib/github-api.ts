@@ -172,6 +172,7 @@ async function fetchWorkflowStatuses(owner: string, repo: string, branch: string
       url: run.html_url,
       updatedAt: run.created_at,
     }))
+    .sort((a, b) => a.name.localeCompare(b.name))
 
   setCache(cacheKey, statuses)
   return statuses
