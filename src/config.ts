@@ -67,6 +67,14 @@ export const REPOS: RepoConfig[] = [
   },
   {
     owner: 'uakihir0',
+    name: 'kdiscord',
+    displayName: 'kdiscord',
+    description: 'Kotlin Multiplatform Discord library',
+    mainBranch: 'main',
+    group: 'PlanetLink',
+  },
+  {
+    owner: 'uakihir0',
     name: 'khttpclient',
     displayName: 'khttpclient',
     description: 'Kotlin Multiplatform simple HTTP request library',
